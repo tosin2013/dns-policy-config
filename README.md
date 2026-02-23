@@ -52,6 +52,10 @@ All 4 DNS governance policies deployed and reporting compliance against `cluster
 
 ![RHACM Governance Dashboard](docs/rhacm-governance-dashboard.png)
 
+## Documentation
+
+- [Blog: Proactive DNS Governance for OpenShift with RHACM](docs/blog/dns-governance-openshift-rhacm.md) — Full technical walkthrough covering the architecture rationale, policy design, and live demo deployment against cluster1.
+
 ## Prerequisites
 
 - Red Hat OpenShift Container Platform 4.x hub cluster
