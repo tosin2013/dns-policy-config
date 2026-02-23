@@ -1,0 +1,54 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-dns-alerting-rule
+  namespace: dns-governance-policies
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+spec:
+  remediationAction: enforce
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: dns-alerting-rule-deployment
+        spec:
+          remediationAction: enforce
+          severity: medium
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: monitoring.openshift.io/v1
+                kind: AlertingRule
+                metadata:
+                  name: dns-governance-alerts
+                  namespace: openshift-monitoring
+                spec:
+                  groups:
+                    - name: dns-governance
+                      rules:
+                        - alert: DNSOperatorDegraded
+                          expr: |
+                            cluster_operator_conditions{name="dns",condition="Degraded",status="true"} == 1
+                          for: 10m
+                          labels:
+                            severity: critical
+                            namespace: openshift-dns-operator
+                          annotations:
+                            summary: "DNS Operator is in Degraded state"
+                            description: "The DNS ClusterOperator has been Degraded for more than 10 minutes. CoreDNS may be failing to serve requests."
+                        - alert: DNSPodsUnavailable
+                          expr: |
+                            kube_daemonset_status_number_available{namespace="openshift-dns",daemonset="dns-default"}
+                            < kube_daemonset_status_desired_number_scheduled{namespace="openshift-dns",daemonset="dns-default"}
+                          for: 5m
+                          labels:
+                            severity: warning
+                            namespace: openshift-dns
+                          annotations:
+                            summary: "CoreDNS pods not available on all nodes"
+                            description: "The dns-default DaemonSet has fewer available replicas than desired for more than 5 minutes."

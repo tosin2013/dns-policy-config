@@ -1,0 +1,42 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-dns-resource-exhaustion
+  namespace: dns-governance-policies
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: dns-daemonset-all-replicas-available
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{- $ds := (lookup "apps/v1" "DaemonSet" "openshift-dns" "dns-default") }}
+            {{- if $ds }}
+              {{- if eq ($ds.status.desiredNumberScheduled | toInt) ($ds.status.numberAvailable | toInt) }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: apps/v1
+                kind: DaemonSet
+                metadata:
+                  name: dns-default
+                  namespace: openshift-dns
+              {{- else }}
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: dns-daemonset-replicas-mismatch
+                  namespace: openshift-dns
+              {{- end }}
+            {{- end }}

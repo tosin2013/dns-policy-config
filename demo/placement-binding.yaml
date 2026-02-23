@@ -1,0 +1,22 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: PlacementBinding
+metadata:
+  name: dns-policy-placement-binding
+  namespace: dns-governance-policies
+placementRef:
+  apiGroup: cluster.open-cluster-management.io
+  kind: Placement
+  name: dns-policy-placement
+subjects:
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: policy-dns-operator-health
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: policy-dns-corefile-integrity
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: policy-dns-resource-exhaustion
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: policy-dns-alerting-rule

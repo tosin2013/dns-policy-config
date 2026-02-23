@@ -1,0 +1,23 @@
+=== DNS Governance Policy Demo Results ===
+Date: 2026-02-23
+Hub: https://api.cluster-7slw9.dynamic.redhatworkshops.io:6443
+RHACM Version: 2.15.1
+Target Managed Cluster: cluster1 (AWS us-east-1, OpenShift 4.21.2)
+
+=== Policy Compliance Status on cluster1 ===
+
+POLICY                           REMEDIATION   COMPLIANCE
+policy-dns-operator-health       inform        Compliant
+policy-dns-corefile-integrity    inform        Compliant
+policy-dns-resource-exhaustion   inform        Compliant
+policy-dns-alerting-rule         enforce       Compliant
+
+=== Details ===
+- DNS Operator Health: ClusterOperator/dns is Available=True, Degraded=False
+- Corefile Integrity: All required plugins present (forward, errors, health, cache)
+- Resource Exhaustion: DaemonSet dns-default has all replicas available
+- Alerting Rule: AlertingRule dns-governance-alerts enforced in openshift-monitoring
+
+=== Placement ===
+Placement dns-policy-placement selected: cluster1
+ClusterSet binding: default -> dns-governance-policies namespace

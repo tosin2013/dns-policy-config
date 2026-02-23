@@ -1,0 +1,43 @@
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-dns-corefile-integrity
+  namespace: dns-governance-policies
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: dns-corefile-has-required-plugins
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates-raw: |
+            {{- $cm := (lookup "v1" "ConfigMap" "openshift-dns" "dns-default") }}
+            {{- if $cm }}
+              {{- $corefile := $cm.data.Corefile }}
+              {{- if and (contains "forward" $corefile) (contains "errors" $corefile) (contains "health" $corefile) (contains "cache" $corefile) }}
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: dns-default
+                  namespace: openshift-dns
+              {{- else }}
+            - complianceType: mustnothave
+              objectDefinition:
+                apiVersion: v1
+                kind: ConfigMap
+                metadata:
+                  name: dns-corefile-missing-required-plugins
+                  namespace: openshift-dns
+              {{- end }}
+            {{- end }}
