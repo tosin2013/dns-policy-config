@@ -1,0 +1,64 @@
+# Policy: DNS Endpoint Consistency (ADR-011)
+# Detects DNS endpoint drift across clusters by validating two things:
+#   1. The DNS Operator CR (operator.openshift.io/v1 DNS/default) exists
+#   2. The cluster DNS Service IP is 172.30.0.10 (the OpenShift default)
+# This catches upgrade-induced changes to the DNS configuration that could
+# cause resolution failures across the fleet.
+# Remediation: inform -- reports non-compliance without auto-remediation.
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-dns-resolv-endpoint-consistency
+  namespace: dns-governance-policies
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/description: >-
+      Detects DNS endpoint drift across clusters. Validates that the DNS
+      Operator config and cluster DNS Service IP match the expected baseline.
+      The default cluster DNS IP (172.30.0.10) should not be changed.
+spec:
+  remediationAction: inform
+  disabled: false
+  policy-templates:
+    # Template 1: Verify the DNS Operator CR exists in its expected state.
+    # This is the authoritative source for CoreDNS configuration including
+    # upstream forwarders. If modified, the Corefile behavior changes.
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: dns-operator-upstream-config
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operator.openshift.io/v1
+                kind: DNS
+                metadata:
+                  name: default
+    # Template 2: Verify the cluster DNS Service IP has not drifted.
+    # Pods use this IP (172.30.0.10) in their resolv.conf as their nameserver.
+    # WARNING: Do not change this value -- it is the OpenShift default and
+    # modifying it will break DNS for all workloads.
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: dns-cluster-service-ip
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: v1
+                kind: Service
+                metadata:
+                  name: dns-default
+                  namespace: openshift-dns
+                spec:
+                  clusterIP: "172.30.0.10"

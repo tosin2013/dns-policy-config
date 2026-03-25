@@ -1,3 +1,8 @@
+# Policy: Corefile Configuration Integrity (ADR-004)
+# Validates that the CoreDNS Corefile (ConfigMap/dns-default in openshift-dns)
+# contains all critical plugins: forward, errors, health, and cache.
+# Uses object-templates-raw to dynamically inspect ConfigMap string content.
+# Remediation: inform -- reports non-compliance without auto-remediation.
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
@@ -20,9 +25,11 @@ spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
+            {{- /* Look up the dns-default ConfigMap that holds the Corefile */ -}}
             {{- $cm := (lookup "v1" "ConfigMap" "openshift-dns" "dns-default") }}
             {{- if $cm }}
               {{- $corefile := $cm.data.Corefile }}
+              {{- /* Check that all four critical plugins are present in the Corefile */ -}}
               {{- if and (contains "forward" $corefile) (contains "errors" $corefile) (contains "health" $corefile) (contains "cache" $corefile) }}
             - complianceType: musthave
               objectDefinition:
@@ -32,6 +39,9 @@ spec:
                   name: dns-default
                   namespace: openshift-dns
               {{- else }}
+            {{- /* Non-compliant: one or more required plugins are missing.
+                   Uses a sentinel ConfigMap name that will never exist,
+                   so mustnothave always evaluates to compliant=false. */ -}}
             - complianceType: mustnothave
               objectDefinition:
                 apiVersion: v1

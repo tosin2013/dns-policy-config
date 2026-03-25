@@ -20,3 +20,9 @@ subjects:
   - apiGroup: policy.open-cluster-management.io
     kind: Policy
     name: policy-dns-alerting-rule
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: policy-dns-resolv-endpoint-consistency
+  - apiGroup: policy.open-cluster-management.io
+    kind: Policy
+    name: policy-dns-upstream-forwarder

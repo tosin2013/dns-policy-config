@@ -5,7 +5,7 @@ Strategic architectural governance for DNS infrastructure within Red Hat OpenShi
 ## Repository Structure
 
 ```
-docs/adrs/          # Architecture Decision Records (ADR-001 through ADR-010)
+docs/adrs/          # Architecture Decision Records (ADR-001 through ADR-012)
 policies/dns/       # RHACM ConfigurationPolicy manifests for DNS governance
 policies/observability/  # AlertingRule and observability integration manifests
 demo/               # Deployment manifests for applying policies to managed clusters
@@ -25,6 +25,8 @@ demo/               # Deployment manifests for applying policies to managed clus
 | [ADR-008](docs/adrs/0008-dnssec-validation-monitoring.md) | DNSSEC Validation Monitoring | Accepted |
 | [ADR-009](docs/adrs/0009-gitops-policy-lifecycle-argocd.md) | GitOps Policy Lifecycle via ArgoCD | Accepted |
 | [ADR-010](docs/adrs/0010-placement-api-adoption.md) | Placement API Adoption over PlacementRule | Accepted |
+| [ADR-011](docs/adrs/0011-dns-endpoint-consistency-detection.md) | DNS Endpoint Consistency Detection | Accepted |
+| [ADR-012](docs/adrs/0012-upstream-dns-forwarder-validation.md) | Upstream DNS Forwarder Validation | Accepted |
 
 ## Policies
 
@@ -34,13 +36,15 @@ demo/               # Deployment manifests for applying policies to managed clus
 | [corefile-integrity](policies/dns/corefile-integrity.yaml) | ConfigMap/dns-default | inform | ADR-004 |
 | [resource-exhaustion](policies/dns/resource-exhaustion.yaml) | DaemonSet/dns-default | inform | ADR-005 |
 | [dns-alerting-rule](policies/observability/dns-alerting-rule.yaml) | AlertingRule | enforce | ADR-006 |
+| [resolv-endpoint-consistency](policies/dns/resolv-endpoint-consistency.yaml) | DNS/default, Service/dns-default | inform | ADR-011 |
+| [upstream-forwarder-validation](policies/dns/upstream-forwarder-validation.yaml) | DNS/default (upstreamResolvers) | inform (disabled) | ADR-012 |
 
 ## Demo: Applying Policies to a Managed Cluster
 
 The `demo/` directory contains manifests to deploy these policies against an RHACM-managed cluster:
 
 ```bash
-# Apply all policies and target cluster1
+# Apply all policies and target standard-cluster
 ./demo/apply.sh
 ```
 
@@ -48,17 +52,17 @@ See the demo [apply script](demo/apply.sh) for step-by-step instructions.
 
 ### RHACM Governance Dashboard
 
-All 4 DNS governance policies deployed and reporting compliance against `cluster1`:
+All 6 DNS governance policies deployed and reporting compliance against `standard-cluster` (plus 1 optional policy deployed but disabled):
 
 ![RHACM Governance Dashboard](docs/rhacm-governance-dashboard.png)
 
 ## Documentation
 
-- [Blog: Proactive DNS Governance for OpenShift with RHACM](docs/blog/dns-governance-openshift-rhacm.md) — Full technical walkthrough covering the architecture rationale, policy design, and live demo deployment against cluster1.
+- [Blog: Proactive DNS Governance for OpenShift with RHACM](docs/blog/dns-governance-openshift-rhacm.md) — Full technical walkthrough covering the architecture rationale, policy design, and live demo deployment against a managed cluster.
 
 ## Prerequisites
 
 - Red Hat OpenShift Container Platform 4.x hub cluster
 - Red Hat Advanced Cluster Management for Kubernetes (RHACM) 2.4+
-- At least one managed cluster (e.g., `cluster1`)
+- At least one managed cluster (e.g., `standard-cluster`)
 - `oc` CLI authenticated to the hub cluster

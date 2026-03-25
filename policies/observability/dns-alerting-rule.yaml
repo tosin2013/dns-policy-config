@@ -1,3 +1,7 @@
+# Policy: DNS Alerting Rule Deployment (ADR-006)
+# Deploys Prometheus AlertingRules for DNS health monitoring.
+# Remediation: enforce -- this policy CREATES the AlertingRule on managed clusters
+# (unlike other DNS policies which only report compliance).
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
@@ -8,6 +12,7 @@ metadata:
     policy.open-cluster-management.io/categories: CM Configuration Management
     policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
 spec:
+  # enforce: automatically creates/updates the AlertingRule on target clusters
   remediationAction: enforce
   disabled: false
   policy-templates:
@@ -31,6 +36,7 @@ spec:
                   groups:
                     - name: dns-governance
                       rules:
+                        # Fires when the DNS ClusterOperator reports Degraded=true for 10+ minutes
                         - alert: DNSOperatorDegraded
                           expr: |
                             cluster_operator_conditions{name="dns",condition="Degraded",status="true"} == 1
@@ -41,6 +47,7 @@ spec:
                           annotations:
                             summary: "DNS Operator is in Degraded state"
                             description: "The DNS ClusterOperator has been Degraded for more than 10 minutes. CoreDNS may be failing to serve requests."
+                        # Fires when some nodes are missing CoreDNS pods for 5+ minutes
                         - alert: DNSPodsUnavailable
                           expr: |
                             kube_daemonset_status_number_available{namespace="openshift-dns",daemonset="dns-default"}

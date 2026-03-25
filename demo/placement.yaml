@@ -11,4 +11,4 @@ spec:
             - key: name
               operator: In
               values:
-                - cluster1
+                - standard-cluster

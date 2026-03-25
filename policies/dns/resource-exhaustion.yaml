@@ -1,3 +1,8 @@
+# Policy: CoreDNS Resource Exhaustion Detection (ADR-005)
+# Detects when CoreDNS pods are missing on nodes by comparing the dns-default
+# DaemonSet's desiredNumberScheduled vs numberAvailable.
+# If they don't match, some nodes lack a local DNS resolver.
+# Remediation: inform -- reports non-compliance without auto-remediation.
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
@@ -20,8 +25,10 @@ spec:
           remediationAction: inform
           severity: high
           object-templates-raw: |
+            {{- /* Look up the dns-default DaemonSet to check pod availability */ -}}
             {{- $ds := (lookup "apps/v1" "DaemonSet" "openshift-dns" "dns-default") }}
             {{- if $ds }}
+              {{- /* Compare desired vs available -- they should be equal */ -}}
               {{- if eq ($ds.status.desiredNumberScheduled | toInt) ($ds.status.numberAvailable | toInt) }}
             - complianceType: musthave
               objectDefinition:
@@ -31,6 +38,9 @@ spec:
                   name: dns-default
                   namespace: openshift-dns
               {{- else }}
+            {{- /* Non-compliant: some nodes are missing CoreDNS pods.
+                   Sentinel ConfigMap pattern -- this CM will never exist,
+                   so mustnothave forces a non-compliant result. */ -}}
             - complianceType: mustnothave
               objectDefinition:
                 apiVersion: v1

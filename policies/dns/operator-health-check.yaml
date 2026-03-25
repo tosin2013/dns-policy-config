@@ -1,3 +1,6 @@
+# Policy: DNS Operator Health Check (ADR-003)
+# Monitors the DNS ClusterOperator to ensure it is not degraded and is available.
+# Remediation: inform -- reports non-compliance without auto-remediation.
 apiVersion: policy.open-cluster-management.io/v1
 kind: Policy
 metadata:
@@ -20,6 +23,7 @@ spec:
           remediationAction: inform
           severity: critical
           object-templates:
+            # musthave: the ClusterOperator/dns must exist with these status conditions.
             - complianceType: musthave
               objectDefinition:
                 apiVersion: config.openshift.io/v1
@@ -28,7 +32,9 @@ spec:
                   name: dns
                 status:
                   conditions:
+                    # Degraded=False means no error conditions are present.
                     - type: Degraded
                       status: "False"
+                    # Available=True means CoreDNS is serving requests.
                     - type: Available
                       status: "True"

@@ -1,0 +1,62 @@
+# Policy: Upstream DNS Forwarder Validation (ADR-012)
+# OPTIONAL -- disabled by default. Enable after customizing for your environment.
+#
+# Validates that the DNS Operator CR has the expected upstream DNS forwarders
+# configured via spec.upstreamResolvers. This catches drift in upstream DNS
+# targets during cluster upgrades.
+#
+# To enable this policy:
+#   1. Replace 192.168.1.10 below with your actual upstream DNS server IP
+#   2. Set disabled: false
+#   3. Re-apply the policy
+#
+# To add a fallback to the node's /etc/resolv.conf, append to the upstreams list:
+#   - type: SystemResolvConf
+#
+# Red Hat docs: https://docs.redhat.com/en/documentation/openshift_dedicated/4/html/networking_operators/dns-operator
+# API reference: https://docs.redhat.com/en/documentation/openshift_container_platform/4.16/html/operator_apis/dns-operator-openshift-io-v1
+#
+# Remediation: inform -- reports non-compliance without auto-remediation.
+apiVersion: policy.open-cluster-management.io/v1
+kind: Policy
+metadata:
+  name: policy-dns-upstream-forwarder
+  namespace: dns-governance-policies
+  annotations:
+    policy.open-cluster-management.io/standards: NIST SP 800-53
+    policy.open-cluster-management.io/categories: CM Configuration Management
+    policy.open-cluster-management.io/controls: CM-2 Baseline Configuration
+    policy.open-cluster-management.io/description: >-
+      Optional policy -- disabled by default. Validates that the DNS Operator CR
+      has the expected upstream DNS forwarders configured via spec.upstreamResolvers.
+      Enable and customize with your organization's upstream DNS server IPs.
+      See: https://docs.redhat.com/en/documentation/openshift_dedicated/4/html/networking_operators/dns-operator
+spec:
+  remediationAction: inform
+  # Set to false to activate this policy after customizing the upstream IP below
+  disabled: true
+  policy-templates:
+    - objectDefinition:
+        apiVersion: policy.open-cluster-management.io/v1
+        kind: ConfigurationPolicy
+        metadata:
+          name: dns-upstream-forwarder-config
+        spec:
+          remediationAction: inform
+          severity: high
+          object-templates:
+            # musthave: the DNS Operator CR must contain this upstream resolver config.
+            # Clusters missing this configuration will report NonCompliant.
+            - complianceType: musthave
+              objectDefinition:
+                apiVersion: operator.openshift.io/v1
+                kind: DNS
+                metadata:
+                  name: default
+                spec:
+                  upstreamResolvers:
+                    upstreams:
+                      # Replace this IP with your organization's upstream DNS server
+                      - type: Network
+                        address: 192.168.1.10
+                        port: 53
